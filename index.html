@@ -31,22 +31,16 @@
     <svg id="overlay"></svg>
   </div>
   <button id="detectButton">Detect Objects</button>
-  <div id="response"></div> <!-- Container for JSON response -->
+  <div id="total-count">Total Count: 0</div> <!-- Display total count -->
   <script>
     async function objectDetection() {
       const model = await tf.automl.loadObjectDetection('model.json');
       const img = document.getElementById('testImage');
-      const options = { score: 0.5, iou: 0.5, topk: 20 };
+      const options = { score: 0.24, iou: 0.5, topk: 500 };
       const predictions = await model.detect(img, options);
-
-      // Log predictions to the console
-      console.log(predictions);
 
       const svg = document.getElementById('overlay');
       svg.innerHTML = ''; // Clear previous overlays
-
-      const responseContainer = document.getElementById('response');
-      responseContainer.innerHTML = ''; // Clear previous response
 
       predictions.forEach(prediction => {
         const { box, label, score } = prediction;
@@ -59,22 +53,23 @@
         rect.setAttribute('height', height);
         rect.setAttribute('class', 'box');
         // Set box stroke color to white
-        rect.setAttribute('style', 'stroke: white; fill: none');
+        rect.setAttribute('style', 'stroke: yellow; fill: none');
 
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', left);
         text.setAttribute('y', top - 5); // Adjust label position
         text.setAttribute('class', 'label');
         // Set label text color to white
-        text.setAttribute('style', 'stroke: white; fill: white');
-        text.textContent = `${label}: ${score.toFixed(3)}`;
+        text.setAttribute('style', 'stroke: yellow; fill: none');
+        text.textContent = `${score.toFixed(3)}`;
 
         svg.appendChild(rect);
         svg.appendChild(text);
       });
 
-      // Display the JSON response
-      responseContainer.textContent = JSON.stringify(predictions, null, 2);
+      // Display the total count
+      const totalCount = document.getElementById('total-count');
+      totalCount.textContent = `Total Count: ${predictions.length}`;
     }
 
     // Add event listener to the button
