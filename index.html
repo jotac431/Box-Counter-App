@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://unpkg.com/@tensorflow/tfjs"></script>
+  <script src="https://unpkg.com/@tensorflow/tfjs-automl"></script>
+  <style>
+    #container {
+      position: relative;
+      display: inline-block;
+    }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .box {
+      stroke: white; /* Set box stroke color to white */
+      fill: none;
+    }
+    .label {
+      fill: white; /* Set label text color to white */
+    }
+  </style>
+</head>
+<body>
+  <input type="file" id="imageInput" accept="image/*">
+  <div id="container">
+    <img id="testImage" src="/testImage1.jpg">
+    <svg id="overlay"></svg>
+  </div>
+  <button id="detectButton">Detect Objects</button>
+  <div id="response"></div> <!-- Container for JSON response -->
+  <script>
+    async function objectDetection() {
+      const model = await tf.automl.loadObjectDetection('model.json');
+      const img = document.getElementById('testImage');
+      const options = { score: 0.5, iou: 0.5, topk: 20 };
+      const predictions = await model.detect(img, options);
+
+      // Log predictions to the console
+      console.log(predictions);
+
+      const svg = document.getElementById('overlay');
+      svg.innerHTML = ''; // Clear previous overlays
+
+      const responseContainer = document.getElementById('response');
+      responseContainer.innerHTML = ''; // Clear previous response
+
+      predictions.forEach(prediction => {
+        const { box, label, score } = prediction;
+        const { left, top, width, height } = box;
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', left);
+        rect.setAttribute('y', top);
+        rect.setAttribute('width', width);
+        rect.setAttribute('height', height);
+        rect.setAttribute('class', 'box');
+        // Set box stroke color to white
+        rect.setAttribute('style', 'stroke: white; fill: none');
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', left);
+        text.setAttribute('y', top - 5); // Adjust label position
+        text.setAttribute('class', 'label');
+        // Set label text color to white
+        text.setAttribute('style', 'stroke: white; fill: white');
+        text.textContent = `${label}: ${score.toFixed(3)}`;
+
+        svg.appendChild(rect);
+        svg.appendChild(text);
+      });
+
+      // Display the JSON response
+      responseContainer.textContent = JSON.stringify(predictions, null, 2);
+    }
+
+    // Add event listener to the button
+    const detectButton = document.getElementById('detectButton');
+    detectButton.addEventListener('click', objectDetection);
+
+    // Handle image selection
+    const imageInput = document.getElementById('imageInput');
+    imageInput.addEventListener('change', function (event) {
+      const selectedImage = event.target.files[0];
+      const img = document.getElementById('testImage');
+      img.src = URL.createObjectURL(selectedImage);
+    });
+  </script>
+</body>
+</html>
